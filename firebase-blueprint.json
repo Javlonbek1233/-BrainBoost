@@ -1,0 +1,174 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Extended user profile data and statistics",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "level": { "type": "number" },
+        "xp": { "type": "number" },
+        "streak": { "type": "number" },
+        "lastActive": { "type": "string", "format": "date-time" },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "quizzesCompleted": { "type": "number" },
+            "flashcardsMastered": { "type": "number" },
+            "studyMinutes": { "type": "number" }
+          }
+        },
+        "weakTopics": { "type": "array", "items": { "type": "string" } },
+        "preferences": {
+          "type": "object",
+          "properties": {
+            "darkMode": { "type": "boolean" },
+            "pomodoroLength": { "type": "number" }
+          }
+        }
+      },
+      "required": ["userId", "email"]
+    },
+    "Subject": {
+      "title": "Subject Category",
+      "description": "Categories for study materials",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["name"]
+    },
+    "Quiz": {
+      "title": "AI Generated Quiz",
+      "description": "A set of questions for a specific topic",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "topic": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"] },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "question": { "type": "string" },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "correctOptionIndex": { "type": "number" },
+              "explanation": { "type": "string" }
+            }
+          }
+        },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "FlashcardDeck": {
+      "title": "Flashcard Deck",
+      "description": "A collection of flashcards",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "userId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "cards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "front": { "type": "string" },
+              "back": { "type": "string" },
+              "mastered": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "StudyPlan": {
+      "title": "Personalized Study Plan",
+      "description": "AI-generated schedule for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string" },
+              "subjectId": { "type": "string" },
+              "dueDate": { "type": "string", "format": "date-time" },
+              "completed": { "type": "boolean" },
+              "estimatedMinutes": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "Note": {
+      "title": "Study Note",
+      "description": "Markdown notes for subjects",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "userId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Room": {
+      "title": "Collaboration Room",
+      "description": "Real-time study group",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "topic": { "type": "string" },
+        "hostId": { "type": "string" },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "active": { "type": "boolean" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/subjects": {
+      "schema": "Subject",
+      "description": "Available course subjects"
+    },
+    "/quizzes": {
+      "schema": "Quiz",
+      "description": "AI generated quizzes"
+    },
+    "/flashcardDecks": {
+      "schema": "FlashcardDeck",
+      "description": "Flashcard decks"
+    },
+    "/notes": {
+      "schema": "Note",
+      "description": "Study notes"
+    },
+    "/studyPlans/{userId}": {
+      "schema": "StudyPlan",
+      "description": "Personal study schedules"
+    },
+    "/rooms": {
+      "schema": "Room",
+      "description": "Study collaboration rooms"
+    }
+  }
+}

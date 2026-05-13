@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validations
+    function isValidUser(data) {
+      return data.keys().hasAll(['userId', 'email']) &&
+             data.userId is string && data.email is string;
+    }
+
+    function isValidQuiz(data) {
+      return data.keys().hasAll(['title', 'topic', 'questions']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.questions is list && data.questions.size() <= 50;
+    }
+
+    function isValidNote(data) {
+      return data.keys().hasAll(['title', 'content', 'userId']) &&
+             data.title is string && data.content is string;
+    }
+
+    // Collection Rules
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'level', 'xp', 'streak', 'lastActive', 'stats', 'weakTopics', 'preferences'])
+      );
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Read-only for users
+    }
+
+    match /quizzes/{quizId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidQuiz(incoming()) && incoming().createdBy == request.auth.uid;
+      allow update: if false; // Quizzes are immutable after generation for now
+      allow delete: if isSignedIn() && existing().createdBy == request.auth.uid;
+    }
+
+    match /flashcardDecks/{deckId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && existing().userId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /notes/{noteId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidNote(incoming());
+      allow update: if isSignedIn() && existing().userId == request.auth.uid && isValidNote(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /studyPlans/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    match /rooms/{roomId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidId(roomId);
+      allow update: if isSignedIn(); // Simplified for collaboration
+      allow delete: if isSignedIn() && existing().hostId == request.auth.uid;
+    }
+  }
+}
